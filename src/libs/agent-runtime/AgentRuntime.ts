@@ -11,11 +11,11 @@ import { LobeGroq } from './groq';
 import { LobeMistralAI } from './mistral';
 import { LobeMoonshotAI } from './moonshot';
 import { LobeOllamaAI } from './ollama';
-import { LobeOpenAI } from './openai';
 import { LobeOpenRouterAI } from './openrouter';
 import { LobePerplexityAI } from './perplexity';
 import { LobeTogetherAI } from './togetherai';
 import { ChatCompetitionOptions, ChatStreamPayload, ModelProvider } from './types';
+import { DifyAI } from './utils/dify';
 import { LobeZeroOneAI } from './zeroone';
 import { LobeZhipuAI } from './zhipu';
 
@@ -111,7 +111,8 @@ class AgentRuntime {
       default:
       case ModelProvider.OpenAI: {
         // Will use the openai as default provider
-        runtimeModel = new LobeOpenAI(params.openai ?? (params as any)[provider]);
+        // runtimeModel = new LobeOpenAI(params.openai ?? (params as any)[provider]);
+        runtimeModel = new DifyAI();
         break;
       }
 

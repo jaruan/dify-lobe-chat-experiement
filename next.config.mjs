@@ -12,8 +12,8 @@ const basePath = process.env.NEXT_PUBLIC_BASE_PATH;
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  compress: isProd,
   basePath,
+  compress: isProd,
   experimental: {
     optimizePackageImports: [
       'emoji-mart',
@@ -29,12 +29,13 @@ const nextConfig = {
 
   output: buildWithDocker ? 'standalone' : undefined,
 
+  reactStrictMode: true,
   rewrites: async () => [
     // due to google api not work correct in some countries
     // we need a proxy to bypass the restriction
-    { source: '/api/chat/google', destination: `${API_PROXY_ENDPOINT}/api/chat/google` },
+    { destination: `${API_PROXY_ENDPOINT}/api/chat/google`, source: '/api/chat/google' },
+    { destination: `https://api.dify.ai/v1/chat-messages`, source: '/api/chat/completions' },
   ],
-  reactStrictMode: true,
 
   webpack(config) {
     config.experiments = {
@@ -45,11 +46,11 @@ const nextConfig = {
     // to fix shikiji compile error
     // refs: https://github.com/antfu/shikiji/issues/23
     config.module.rules.push({
-      test: /\.m?js$/,
-      type: 'javascript/auto',
       resolve: {
         fullySpecified: false,
       },
+      test: /\.m?js$/,
+      type: 'javascript/auto',
     });
 
     return config;
@@ -77,20 +78,26 @@ const withSentry =
         withSentryConfig(
           c,
           {
+            org: process.env.SENTRY_ORG,
+
+            project: process.env.SENTRY_PROJECT,
             // For all available options, see:
             // https://github.com/getsentry/sentry-webpack-plugin#options
-
             // Suppresses source map uploading logs during build
             silent: true,
-            org: process.env.SENTRY_ORG,
-            project: process.env.SENTRY_PROJECT,
           },
           {
-            // For all available options, see:
-            // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+            // Enables automatic instrumentation of Vercel Cron Monitors.
+            // See the following for more information:
+            // https://docs.sentry.io/product/crons/
+            // https://vercel.com/docs/cron-jobs
+            automaticVercelMonitors: true,
 
-            // Upload a larger set of source maps for prettier stack traces (increases build time)
-            widenClientFileUpload: true,
+            // Automatically tree-shake Sentry logger statements to reduce bundle size
+            disableLogger: true,
+
+            // Hides source maps from generated client bundles
+            hideSourceMaps: true,
 
             // Transpiles SDK to be compatible with IE11 (increases bundle size)
             transpileClientSDK: true,
@@ -100,17 +107,10 @@ const withSentry =
             // side errors will fail.
             tunnelRoute: '/monitoring',
 
-            // Hides source maps from generated client bundles
-            hideSourceMaps: true,
-
-            // Automatically tree-shake Sentry logger statements to reduce bundle size
-            disableLogger: true,
-
-            // Enables automatic instrumentation of Vercel Cron Monitors.
-            // See the following for more information:
-            // https://docs.sentry.io/product/crons/
-            // https://vercel.com/docs/cron-jobs
-            automaticVercelMonitors: true,
+            // For all available options, see:
+            // https://docs.sentry.io/platforms/javascript/guides/nextjs/manual-setup/
+            // Upload a larger set of source maps for prettier stack traces (increases build time)
+            widenClientFileUpload: true,
           },
         )
     : noWrapper;
